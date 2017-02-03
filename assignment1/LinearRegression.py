@@ -12,7 +12,7 @@ args = parser.parse_args()
 
 class LinearRegression:
 
-    def fit(self, X, y, regularization=True):
+    def closed_form_solution(self, X, y):
         self.X = X
         self.y = y
         self.n_coef = len(X[0]) if len(X) > 0 else 0
@@ -48,7 +48,7 @@ def parse_data(fname, train=True):
 X_train, y_train = parse_data('train.csv')
 
 linreg = LinearRegression()
-intercept_, coef_ = linreg.fit(X_train, y_train)
+intercept_, coef_ = linreg.closed_form_solution(X_train, y_train)
 X_test, y_pred = parse_data('test.csv', train=False), []
 for x in X_test:
     y_pred.append(linreg.predict(x))
