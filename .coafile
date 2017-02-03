@@ -1,0 +1,3 @@
+[Default]
+bears=LineLengthBear, GitCommitBear, PEP8Bear
+files=**.py
