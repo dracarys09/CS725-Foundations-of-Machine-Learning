@@ -1,39 +1,56 @@
-import argparse
 import numpy as np
 import csv
-
-parser = argparse.ArgumentParser(description=("Implementation of Linear"
-                                              "Regression using Gradient"
-                                              "Descent algorithm."))
-
-parser.add_argument("dataset_dir", help="Path of directory containing dataset")
-args = parser.parse_args()
-
 
 class LinearRegression:
 
     def closed_form_solution(self, X, y):
-        self.X = X
-        self.y = y
-        self.n_coef = len(X[0]) if len(X) > 0 else 0
-
         X = np.insert(X, 0, 1, axis=1)
-
         X_transpose = np.transpose(X)
-        self.W = np.matmul(np.matmul(np.linalg.inv(
+        W = np.matmul(np.matmul(np.linalg.inv(
             np.matmul(X_transpose, X)), X_transpose), y)
-        self.intercept = self.W[0]
-        self.W = self.W[1:]
+        return W
 
-        return self.intercept, self.W
 
-    def predict(self, x):
-        predicted_value = np.dot(self.W[:, 0], x) + self.intercept[0]
+    def gradient_descent(self, X, y, alpha=0.001, eps=0.0001, lam=20000):
+        X = np.insert(X, 0, 1, axis=1)
+        converged = False
+        m = X.shape[0]
+        W = np.random.randn(len(X[0]))
+        n_coef = len(W)
+
+        y_pred = [self.predict(x, W) for x in X]
+        cost = sum([(y_pred[i] - y[i])**2 for i in range(m)])[0]
+        grad = [0.0 for _ in range(n_coef)]
+
+        itr = 0
+        while not converged:
+            for j in range(n_coef):
+                grad[j] = 1.0/m * sum([(y_pred[i] - y[i])*X[i][j] for i in range(m)])[0]
+                grad[j] += (lam/m) * W[j]
+
+            for j in range(n_coef):
+                W[j] = W[j] - alpha*grad[j]
+
+            y_pred = [self.predict(x, W) for x in X]
+            MSE = sum([(y_pred[i] - y[i])**2 for i in range(m)])[0]
+            if abs(cost - MSE) <= eps:
+                converged = True
+
+            cost = MSE
+
+            itr += 1
+            if(itr == 1000):
+                break
+
+        return W
+
+    def predict(self, x, W):
+        predicted_value = np.dot(W.T, x)
         return predicted_value
 
 
 def parse_data(fname, train=True):
-    with open(args.dataset_dir+fname, 'r') as f:
+    with open('./data/'+fname, 'r') as f:
         headers = f.readline().split(',')
         data = np.loadtxt(f, delimiter=',', usecols=range(1, len(headers)))
 
@@ -44,21 +61,13 @@ def parse_data(fname, train=True):
     else:
         return data
 
-
-X_train, y_train = parse_data('train.csv')
-
-linreg = LinearRegression()
-intercept_, coef_ = linreg.closed_form_solution(X_train, y_train)
-X_test, y_pred = parse_data('test.csv', train=False), []
-for x in X_test:
-    y_pred.append(linreg.predict(x))
-
-with open('output.csv', 'w') as f:
-    f.write('ID,MEDV\n')
-    i = 0
-    for val in y_pred:
-        f.write(str(i))
-        f.write(',')
-        f.write(str(val))
-        f.write('\n')
-        i += 1
+def create_output_file(predicted_values):
+    with open('output.csv', 'w') as f:
+        f.write('ID,MEDV\n')
+        i = 0
+        for val in predicted_values:
+            f.write(str(i))
+            f.write(',')
+            f.write(str(val))
+            f.write('\n')
+            i += 1
