@@ -11,42 +11,52 @@ class LinearRegression:
         return W
 
 
-    def gradient_descent(self, X, y, alpha=0.001, eps=0.0001, lam=20000):
+    def gradient_descent(self, X, y, alpha=0.001, eps=0.000001, lam=0.001):
+        X = self.normalize_data(X)
         X = np.insert(X, 0, 1, axis=1)
         converged = False
         m = X.shape[0]
         W = np.random.randn(len(X[0]))
         n_coef = len(W)
+        W = W[:, np.newaxis]
 
-        y_pred = [self.predict(x, W) for x in X]
-        cost = sum([(y_pred[i] - y[i])**2 for i in range(m)])[0]
-        grad = [0.0 for _ in range(n_coef)]
-
+        temp = np.dot(X, W) - y
+        cost = np.dot(temp.T, temp)[0]
         itr = 0
         while not converged:
-            for j in range(n_coef):
-                grad[j] = 1.0/m * sum([(y_pred[i] - y[i])*X[i][j] for i in range(m)])[0]
-                grad[j] += (lam/m) * W[j]
+            delta_W = np.dot(X.T, (np.dot(X, W) - y)) + lam*W
+            delta_W /= m
+            W = W - alpha*delta_W
 
-            for j in range(n_coef):
-                W[j] = W[j] - alpha*grad[j]
+            temp = np.dot(X, W) - y
+            MSE = np.dot(temp.T, temp)[0]
 
-            y_pred = [self.predict(x, W) for x in X]
-            MSE = sum([(y_pred[i] - y[i])**2 for i in range(m)])[0]
             if abs(cost - MSE) <= eps:
+                print("converged")
                 converged = True
 
             cost = MSE
 
             itr += 1
-            if(itr == 1000):
+            if(itr == 10000):
+                print("completed all iterations")
                 break
 
         return W
 
+
     def predict(self, x, W):
-        predicted_value = np.dot(W.T, x)
+        predicted_value = np.dot(x, W)
         return predicted_value
+
+
+    def normalize_data(self, X):
+        mins = np.min(X, axis=0)
+        maxs = np.max(X, axis=0)
+        rng = maxs - mins
+
+        return (X-mins)/rng
+
 
 
 def parse_data(fname, train=True):

@@ -8,6 +8,7 @@ def predict(x, W):
 
 
 X_train, y_train = parse_data('train.csv')
+# print(X_train.shape)
 # X_train = np.insert(X_train, 0, 1, axis=1)
 # W = np.random.randn(len(X_train[0]))
 # n_coef = len(W)
@@ -40,13 +41,14 @@ X_train, y_train = parse_data('train.csv')
 
 
 linreg = LinearRegression()
-alpha = 0.000001
-eps = 0.0001
-W_gradient_descent = linreg.gradient_descent(X_train, y_train, alpha, eps)
+alpha = 0.00001
+eps = 0.000001
+lam = 200000
+W_gradient_descent = linreg.gradient_descent(X_train, y_train, alpha, eps, lam)
 W_closed_form = linreg.closed_form_solution(X_train, y_train)
-
 X_test, y_pred_gradient_descent, y_pred_closed_form = parse_data('test.csv', train=False), [], []
 X_test = np.insert(X_test, 0, 1, axis=1)
+
 
 for x in X_test:
     y_pred_gradient_descent.append(linreg.predict(x, W_gradient_descent))
