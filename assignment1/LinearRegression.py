@@ -3,16 +3,24 @@ import csv
 
 class LinearRegression:
 
-    def closed_form_solution(self, X, y):
+    def closed_form_solution(self, X, y, lam=0.25, ridge=True):
+        X = self.normalize_data(X)
+        X = self.add_features(X)
         X = np.insert(X, 0, 1, axis=1)
         X_transpose = np.transpose(X)
-        W = np.matmul(np.matmul(np.linalg.inv(
-            np.matmul(X_transpose, X)), X_transpose), y)
+        if ridge:
+            W = np.dot(np.dot(np.linalg.inv(
+                np.dot(X_transpose, X) + lam*np.identity(len(X_transpose))), X_transpose), y)
+        else:
+            W = np.dot(np.dot(np.linalg.inv(
+                np.dot(X_transpose, X)), X_transpose), y)
+
         return W
 
 
-    def gradient_descent(self, X, y, alpha=0.001, eps=0.000001, lam=0.001):
+    def gradient_descent(self, X, y, alpha=0.001, eps=0.000001, lam=0.001, n_iter=1000):
         X = self.normalize_data(X)
+        X = self.add_features(X)
         X = np.insert(X, 0, 1, axis=1)
         converged = False
         m = X.shape[0]
@@ -32,18 +40,25 @@ class LinearRegression:
             MSE = np.dot(temp.T, temp)[0]
 
             if abs(cost - MSE) <= eps:
-                print("converged")
                 converged = True
 
             cost = MSE
 
             itr += 1
-            if(itr == 10000):
-                print("completed all iterations")
+            if(itr == n_iter):
                 break
 
         return W
 
+    def add_features(self, X):
+        n_cols = X.shape[1]
+        for j in range(n_cols):
+            col = X[:,j]
+            X = np.column_stack((X, np.square(col)))
+            X = np.column_stack((X, np.sqrt(np.abs(col))))
+            # X = np.column_stack((X, np.square(col)*np.square(col)))
+            # X = np.column_stack((X, np.sqrt(np.abs(col)*np.sqrt(np.abs(col)))))
+        return X
 
     def predict(self, x, W):
         predicted_value = np.dot(x, W)
@@ -51,11 +66,7 @@ class LinearRegression:
 
 
     def normalize_data(self, X):
-        mins = np.min(X, axis=0)
-        maxs = np.max(X, axis=0)
-        rng = maxs - mins
-
-        return (X-mins)/rng
+        return (X - X.mean(axis=0))/X.std(axis=0)
 
 
 

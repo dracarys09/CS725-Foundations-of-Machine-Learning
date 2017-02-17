@@ -1,64 +1,46 @@
 from LinearRegression import LinearRegression, parse_data, create_output_file
 import numpy as np
+import sys
 
-
-def predict(x, W):
-    predicted_value = np.dot(W, x)
-    return predicted_value
-
-
-X_train, y_train = parse_data('train.csv')
-# print(X_train.shape)
-# X_train = np.insert(X_train, 0, 1, axis=1)
-# W = np.random.randn(len(X_train[0]))
-# n_coef = len(W)
-# m = len(X_train)
-#
-# y_pred = [predict(x, W) for x in X_train]
-# cost = sum([(y_pred[i] - y_train[i])**2 for i in range(m)])[0]
-# grad = [0.0 for _ in range(n_coef)]
-# alpha = 0.000001
-#
-#
-# print(cost)
-# print(len(grad))
-#
-# for _ in range(1000):
-#     for j in range(n_coef):
-#         grad[j] = 1.0/m * sum([(y_pred[i] - y_train[i])*X_train[i][j] for i in range(m)])[0]
-#
-#     print(grad)
-#
-#     for j in range(n_coef):
-#         W[j] = W[j] - alpha*grad[j]
-#
-#     y_pred = [predict(x, W) for x in X_train]
-#     MSE = sum([(y_pred[i] - y_train[i])**2 for i in range(m)])[0]
-#
-#     cost = MSE
-#
-#     print(cost)
-
+algo = str(sys.argv[1])
+print("Running "+algo)
 
 linreg = LinearRegression()
-alpha = 0.00001
-eps = 0.000001
-lam = 200000
-W_gradient_descent = linreg.gradient_descent(X_train, y_train, alpha, eps, lam)
-W_closed_form = linreg.closed_form_solution(X_train, y_train)
-X_test, y_pred_gradient_descent, y_pred_closed_form = parse_data('test.csv', train=False), [], []
+
+data = parse_data('train.csv', train=False)
+
+W_temp = []
+n_iter = 1000
+for i in range(n_iter):
+    np.random.shuffle(data)
+
+    X_train = data[0:280, 0:len(data[0])-1]
+    y_train = data[0:280, len(data[0])-1:]
+
+    if algo == "gradient_descent":
+        W_temp.append(linreg.gradient_descent(X_train, y_train))
+    else:
+        W_temp.append(linreg.closed_form_solution(X_train, y_train))
+
+W_temp = np.array(W_temp)
+W = []
+for j in range(W_temp.shape[1]):
+    sm = 0
+    for i in range(n_iter):
+        sm += W_temp[i][j][0]
+    sm /= n_iter
+    W.append(sm)
+
+W = np.array(W)
+W = W.reshape((len(W), 1))
+
+X_test, y_pred = parse_data('test.csv', train=False), []
+X_test = linreg.normalize_data(X_test)
+X_test = linreg.add_features(X_test)
 X_test = np.insert(X_test, 0, 1, axis=1)
 
-
+y_pred = []
 for x in X_test:
-    y_pred_gradient_descent.append(linreg.predict(x, W_gradient_descent))
-    y_pred_closed_form.append(linreg.predict(x, W_closed_form))
+    y_pred.append(linreg.predict(x, W)[0])
 
-
-print("Gradient Descent W")
-print(y_pred_gradient_descent)
-
-print("Closed Form W")
-print(y_pred_closed_form)
-
-# create_output_file(y_pred)
+create_output_file(y_pred)
